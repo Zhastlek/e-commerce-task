@@ -29,6 +29,7 @@ func EncodeID(id int) []byte {
 }
 
 func DecodeID(id []byte) error {
+	log.Println(id)
 	_, err := strconv.Atoi(string(id))
 	if err != nil {
 		log.Printf("error can't convert id to integer: %v\n", err)

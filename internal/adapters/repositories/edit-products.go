@@ -35,29 +35,21 @@ func (store *editStore) CreateOne(p *models.Product) (int, error) {
 		return 0, errors.New("error you can not create a copy of the product")
 	}
 	err = store.db.Update(func(tx *bolt.Tx) error {
-		// Retrieve the users bucket.
-		// This should be created when the DB is first opened.
 		b := tx.Bucket([]byte("bucket-by-id"))
-
-		// Generate ID for the user.
-		// This returns an error only if the Tx is closed or not writeable.
-		// That can't happen in an Update() call so I ignore the error check.
 		id, _ := b.NextSequence()
 		p.Id = int(id)
-
 		buff := EncodeValue(p)
-
 		// Persist bytes to users bucket.
 		return b.Put(EncodeID(p.Id), buff)
 	})
 	if err != nil {
-		log.Fatalf("failure : %s\n", err)
+		log.Printf("error unable coneccting to bucket by id: %v\n", err)
+		return 0, err
 	}
 	if err = store.linkNameToId(p); err != nil {
 		log.Printf("error unable to link name to id: %v\n", err)
 		return 0, err
 	}
-
 	return p.Id, nil
 }
 
@@ -92,14 +84,14 @@ func (store *editStore) UpdateOne(p *models.Product) error {
 	}
 	err = store.db.Update(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte("bucket-by-id"))
-
 		if err := bkt.Put(EncodeID(p.Id), EncodeValue(p)); err != nil {
 			return err
 		}
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return err
 	}
 	if err = store.UpdateLink(p); err != nil {
 		log.Printf("error unable to link name to id: %v\n", err)
@@ -114,7 +106,7 @@ func (store *editStore) checkForCopy(name string) (bool, error) {
 		b := tx.Bucket([]byte("bucket-by-name"))
 		log.Println("b bucket----", b)
 		result := b.Get([]byte(name))
-		log.Println("result---->>>>>>>>>>>>>>", result, len(result), DecodeID(result))
+		// log.Println("result---->>>>>>>>>>>>>>", result, len(result), DecodeID(result))
 		if result == nil || len(result) == 0 {
 			status = true
 		}
@@ -129,12 +121,14 @@ func (store *editStore) checkForCopy(name string) (bool, error) {
 
 func (store *editStore) linkNameToId(p *models.Product) error {
 	err := store.db.Update(func(tx *bolt.Tx) error {
-		// Retrieve the users bucket.
-		// This should be created when the DB is first opened.
 		b := tx.Bucket([]byte("bucket-by-name"))
-
-		// Persist bytes to users bucket.
-		return b.Put([]byte(p.Name), EncodeID(p.Id))
+		err := b.Put([]byte(p.Name), EncodeID(p.Id))
+		if err != nil {
+			log.Printf("error create link name to id product: %v\n", err)
+			return err
+		}
+		// log.Println(p.Id, p.Name, p.Price)
+		return nil
 	})
 	if err != nil {
 		log.Println(err)
@@ -147,7 +141,6 @@ func (store *editStore) deleteLink(id int) error {
 	err := store.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("bucket-by-id"))
 		name := b.Get(EncodeID(id))
-
 		bucketByName := tx.Bucket([]byte("bucket-by-name"))
 		err := bucketByName.Delete(name)
 		if err != nil {
@@ -165,7 +158,6 @@ func (store *editStore) deleteLink(id int) error {
 func (store *editStore) UpdateLink(p *models.Product) error {
 	err := store.db.Update(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte("bucket-by-name"))
-
 		if err := bkt.Put([]byte(p.Name), EncodeID(p.Id)); err != nil {
 			return err
 		}

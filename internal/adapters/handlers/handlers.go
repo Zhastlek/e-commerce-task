@@ -31,40 +31,41 @@ var (
 	success      = "success"
 	inValidPrice = "Price must be positive number"
 	inValidId    = "invalid product id"
+	inValidName  = "invalid product name"
 )
 
 func (h *handler) Register(router *gin.Engine) {
 	router.GET("/products", h.GetAll)
-
-	router.GET("/product/add", h.ParseCreatePage)
 	router.POST("/cmd/add-product", h.CreateOne)
-
-	router.POST("/product/edit/:productId", h.ParseUpdatePage)
+	router.POST("/product/edit/:productId", h.GetOneById)
 	router.PUT("/cmd/edit-product", h.UpdateOne)
-
 	router.DELETE("/cmd/delete-product", h.DeleteOne)
-
 	router.GET("/q/product-search-by-name", h.GetOneByName)
 }
 
 func (h *handler) GetOneByName(c *gin.Context) {
 	var p *models.GetByName
-	switch c.Request.Header.Get("Accept") {
-	case "application/json":
-		// Respond with JSON
-		if err := c.BindJSON(&p); err != nil {
-			return
-		}
-		product, err := h.getter.GetOneByName(p.SearchName)
-		if err != nil {
-			log.Printf("Error get one by name method handler: %v\n", err)
-			return
-		}
-		// var answer models.GiveProduct
-		c.IndentedJSON(http.StatusOK, gin.H{
-			"product": product,
+	if err := c.BindJSON(&p); err != nil {
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  err.Error(),
 		})
+		return
 	}
+	// log.Println("handler--get by name---->", p, p.SearchName)
+	product, err := h.getter.GetOneByName(p.SearchName)
+	if err != nil {
+		log.Printf("Error get one by name method handler: %v\n", err)
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  inValidName,
+		})
+		return
+	}
+	// log.Println("get by name handler:----->", product)
+	c.JSON(http.StatusOK, gin.H{
+		"product": product,
+	})
 }
 
 func (h *handler) GetAll(c *gin.Context) {
@@ -82,6 +83,11 @@ func (h *handler) GetAll(c *gin.Context) {
 func (h *handler) DeleteOne(c *gin.Context) {
 	var product *models.Product
 	if err := c.BindJSON(&product); err != nil {
+		log.Printf("error in delete one method handler invalid json: %v\n", err)
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  err.Error(),
+		})
 		return
 	}
 	if err := h.editor.DeleteOne(product.Id); err != nil {
@@ -100,6 +106,17 @@ func (h *handler) DeleteOne(c *gin.Context) {
 func (h *handler) UpdateOne(c *gin.Context) {
 	var product *models.Product
 	if err := c.BindJSON(&product); err != nil {
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  err.Error(),
+		})
+		return
+	}
+	if product.Price <= 0 {
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  inValidPrice,
+		})
 		return
 	}
 	if err := h.editor.UpdateOne(product); err != nil {
@@ -118,6 +135,17 @@ func (h *handler) UpdateOne(c *gin.Context) {
 func (h *handler) CreateOne(c *gin.Context) {
 	var product *models.Product
 	if err := c.BindJSON(&product); err != nil {
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  err.Error(),
+		})
+		return
+	}
+	if product.Price <= 0 {
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  inValidPrice,
+		})
 		return
 	}
 	id, err := h.editor.CreateOne(product)
@@ -125,7 +153,7 @@ func (h *handler) CreateOne(c *gin.Context) {
 		log.Printf("error in delete one method handler: %v\n", err)
 		c.AbortWithStatusJSON(400, gin.H{
 			"status": failed,
-			"error":  err,
+			"error":  err.Error(),
 		})
 		return
 	}
@@ -135,10 +163,19 @@ func (h *handler) CreateOne(c *gin.Context) {
 	})
 }
 
-func (h *handler) ParseCreatePage(c *gin.Context) {
-
-}
-
-func (h *handler) ParseUpdatePage(c *gin.Context) {
-
+func (h *handler) GetOneById(c *gin.Context) {
+	id := c.Param("productId")
+	// log.Println("id---->", id)
+	product, err := h.getter.GetOneById(id)
+	if err != nil || product == nil {
+		log.Printf("error in get one by id method handler: %v\n", err)
+		c.AbortWithStatusJSON(400, gin.H{
+			"status": failed,
+			"error":  inValidId,
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"store": product,
+	})
 }

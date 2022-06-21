@@ -36,8 +36,8 @@ func (s *editStore) CreateOne(p *models.Product) (int, error) {
 // DeleteOne implements ServiceEditor
 func (s *editStore) DeleteOne(id int) error {
 	if !pkg.IsValid(id) {
-		log.Printf("id for delete product is not valid")
-		return errors.New("id for delete product is not valid")
+		log.Printf("error id for delete product is not valid")
+		return errors.New("error id for delete product is not valid")
 	}
 	if err := s.storage.DeleteOne(id); err != nil {
 		log.Printf("error in delete one method service: %v\n", err)

@@ -15,6 +15,7 @@ type store struct {
 
 type StorageGetter interface {
 	GetOneByName(productName string) (*models.Product, error)
+	GetOneById(productId string) (*models.Product, error)
 	GetAll() ([]*models.Product, error)
 }
 
@@ -26,9 +27,11 @@ func NewStorageGetter(dbGetter *bolt.DB) StorageGetter {
 
 func (store *store) GetOneByName(productName string) (*models.Product, error) {
 	var product *models.Product
+	// log.Println("name product ------>", productName)
 	err := store.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("bucket-by-name"))
 		id := b.Get([]byte(productName))
+		// log.Println("ID COPY---->", id, string(id))
 		if err := DecodeID(id); err != nil {
 			log.Printf("error can't find id on name: %v\n", err)
 			return err
@@ -45,11 +48,25 @@ func (store *store) GetOneByName(productName string) (*models.Product, error) {
 	return product, nil
 }
 
+func (store *store) GetOneById(productId string) (*models.Product, error) {
+	var product *models.Product
+	err := store.db.View(func(tx *bolt.Tx) error {
+		bucketById := tx.Bucket([]byte("bucket-by-id"))
+		result := bucketById.Get([]byte(productId))
+		product = DecodeValue(result)
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error in get by name VIEW method: %v\n", err)
+		return nil, err
+	}
+	return product, nil
+}
+
 func (store *store) GetAll() ([]*models.Product, error) {
 	products := []*models.Product{}
 	err := store.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("bucket-by-id"))
-
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {

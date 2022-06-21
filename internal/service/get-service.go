@@ -4,6 +4,7 @@ import (
 	"e-comerce/internal/adapters/repositories"
 	"e-comerce/internal/models"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -21,7 +22,21 @@ func (s *store) GetOneByName(productName string) (*models.Product, error) {
 	productName = strings.ToLower(productName)
 	product, err := s.storage.GetOneByName(productName)
 	if err != nil {
-		log.Printf("Error in GetOne method in service: %v\n", err)
+		log.Printf("error in GetOne method in service: %v\n", err)
+		return nil, err
+	}
+	return product, nil
+}
+
+func (s *store) GetOneById(productId string) (*models.Product, error) {
+	_, err := strconv.Atoi(productId)
+	if err != nil {
+		log.Printf("error invalid id product: %v\n", err)
+		return nil, err
+	}
+	product, err := s.storage.GetOneById(productId)
+	if err != nil {
+		log.Printf("error in GetOneById method in service: %v\n", err)
 		return nil, err
 	}
 	return product, nil

@@ -16,14 +16,11 @@
         </tr>
         {{ .store}}
         {{range .Posts}}
-        <form action="/product/edit/{{.Id}}" method="get">
         <tr>
-            <td><a href="/posts/{{.Id}}"><button name="id" value="{{.Id}}"><h3>{{.Title}}</h3></button></a></td>
             <td>{{.Id}}</td>
             <td>{{.Name}}</td>
             <td>{{.Price}}</td>
         </tr>
-        </form>
         {{end}}
     </table>
 

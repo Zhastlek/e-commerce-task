@@ -7,6 +7,7 @@ import (
 type ServiceGetter interface {
 	GetAll() ([]*models.Product, error)
 	GetOneByName(productName string) (*models.Product, error)
+	GetOneById(productId string) (*models.Product, error)
 }
 
 type ServiceEditor interface {
