@@ -1,3 +1,9 @@
+## Запуск программы:
+1. "make run" или "go run cmd/main.go"
+2.  Ссылка для тестирования функционала в коллекции **POSTMAN:**  https://go.postman.co/workspace/Team-Workspace~d861f7b1-f86b-41dc-8392-4f629e35c170/collection/20613327-bc1c9597-c36b-491c-b955-416d6f8695ed?action=share&creator=20613327
+3. В **POSTMAN** коллекции `e-commerce-task` указаны API и методы которые обрабатывает данная программа
+4. Данная программа работает на `localhost:9000`
+
 ## e-commerce-task
 
 ## Задание
